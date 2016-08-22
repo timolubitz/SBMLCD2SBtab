@@ -223,12 +223,12 @@ class SBMLDocument:
         self.id2object           = {}
         salias2sid               = {}
 
-        for sp in self.model.getListOfSpecies():
+        for sp in self.model.getListOfSpecies():              #connect ids, names, and objects of species elements
             self.sid2sname[sp.getId()] = sp.getName()
             self.sname2sid[sp.getName()] = sp.getId()
             self.id2object[sp.getId()] = sp
             try:
-                notes_string = sp.getNotesString()
+                notes_string = sp.getNotesString()            #save possibly attached notes of species element
                 notes_obj    = re.search('<body>(.*)</body>',notes_string.replace('\n',' '))
                 self.sid2notes[sp.getId()] = notes_obj.group(1)
             except: self.sid2notes[sp.getId()] = None
@@ -239,6 +239,7 @@ class SBMLDocument:
         for j in range(sp_list.getNumChildren()):
             self.id2object[sp_list.getChild(j).getAttrValue(0)] = sp_list.getChild(j)
 
+        #now save all the information on the cell designer species elements
         prot_list = exten.getChild('listOfProteins')
         for i in range(prot_list.getNumChildren()):
             prot_id   = prot_list.getChild(i).getAttrValue(0)
@@ -268,6 +269,7 @@ class SBMLDocument:
                 try: self.sid2layernotes[salias2sid[alias]] = notes.replace('\n',' ').replace('\t',' ').replace(';',' ')
                 except: self.sid2layernotes[alias] = notes.replace('\n',' ').replace('\t',' ').replace(';',' ')
 
+        #the same for the reactions of the model
         for reaction in self.model.getListOfReactions():
             try:
                 notes_string = reaction.getNotesString()
@@ -291,6 +293,7 @@ class SBMLDocument:
             self.product2reaction[product] = reaction.getId()
             self.reaction2substrates[reaction.getId()] = substrates
 
+        #finally process the SBML species elements and create the extensions for the states and modifications
         for species in self.model.getListOfSpecies():
             state_name    = species.getName()
             firstchild    = species.getAnnotation().getChild(0)
@@ -332,7 +335,7 @@ class SBMLDocument:
             sname = (sname+'.')*multi
             self.sid2statename[sid] = sname[:-1]
         
-    def extractNameAndState(self,species,recursion=False,r=False):
+    def extractNameAndState(self,species,recursion=False):
         '''
         if we are dealing with a cell designer file, we need to take the modification state
         of the species into consideration; this needs to be extracted here
